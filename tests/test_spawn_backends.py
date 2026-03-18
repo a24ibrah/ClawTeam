@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import sys
 
+from clawteam.spawn.cli_env import build_spawn_path, resolve_clawteam_executable
 from clawteam.spawn.subprocess_backend import SubprocessBackend
 from clawteam.spawn.tmux_backend import TmuxBackend
 
@@ -31,9 +32,7 @@ def test_subprocess_backend_prepends_current_clawteam_bin_to_path(monkeypatch, t
         return DummyProcess()
 
     monkeypatch.setattr("clawteam.spawn.subprocess_backend.subprocess.Popen", fake_popen)
-    monkeypatch.setattr(
-        "clawteam.spawn.subprocess_backend.register_agent", lambda **_: None, raising=False
-    )
+    monkeypatch.setattr("clawteam.spawn.registry.register_agent", lambda **_: None)
 
     backend = SubprocessBackend()
     backend.spawn(
@@ -82,9 +81,7 @@ def test_tmux_backend_exports_spawn_path_for_agent_commands(monkeypatch, tmp_pat
     )
     monkeypatch.setattr("clawteam.spawn.tmux_backend.subprocess.run", fake_run)
     monkeypatch.setattr("clawteam.spawn.tmux_backend.time.sleep", lambda *_: None)
-    monkeypatch.setattr(
-        "clawteam.spawn.tmux_backend.register_agent", lambda **_: None, raising=False
-    )
+    monkeypatch.setattr("clawteam.spawn.registry.register_agent", lambda **_: None)
 
     backend = TmuxBackend()
     backend.spawn(
@@ -103,3 +100,17 @@ def test_tmux_backend_exports_spawn_path_for_agent_commands(monkeypatch, tmp_pat
     assert f"export PATH={clawteam_bin.parent}:/usr/bin:/bin" in full_cmd
     assert f"export CLAWTEAM_BIN={clawteam_bin}" in full_cmd
     assert f"{clawteam_bin} lifecycle on-exit --team demo-team --agent worker1" in full_cmd
+
+
+def test_resolve_clawteam_executable_ignores_unrelated_argv0(monkeypatch, tmp_path):
+    unrelated = tmp_path / "not-clawteam-review"
+    unrelated.write_text("#!/bin/sh\n")
+    resolved_bin = tmp_path / "bin" / "clawteam"
+    resolved_bin.parent.mkdir(parents=True)
+    resolved_bin.write_text("#!/bin/sh\n")
+
+    monkeypatch.setattr(sys, "argv", [str(unrelated)])
+    monkeypatch.setattr("clawteam.spawn.cli_env.shutil.which", lambda name: str(resolved_bin))
+
+    assert resolve_clawteam_executable() == str(resolved_bin)
+    assert build_spawn_path("/usr/bin:/bin").startswith(f"{resolved_bin.parent}:")
