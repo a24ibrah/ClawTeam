@@ -8,6 +8,13 @@ import sys
 from pathlib import Path
 
 
+def _looks_like_clawteam_entrypoint(value: str) -> bool:
+    """Return True when argv0 plausibly points at the clawteam CLI."""
+
+    name = Path(value).name.lower()
+    return name == "clawteam" or name.startswith("clawteam.")
+
+
 def resolve_clawteam_executable() -> str:
     """Resolve the current clawteam executable.
 
@@ -17,7 +24,7 @@ def resolve_clawteam_executable() -> str:
     """
 
     argv0 = (sys.argv[0] or "").strip()
-    if argv0:
+    if argv0 and _looks_like_clawteam_entrypoint(argv0):
         candidate = Path(argv0).expanduser()
         if candidate.is_file():
             return str(candidate.resolve())
