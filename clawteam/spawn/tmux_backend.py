@@ -81,6 +81,8 @@ class TmuxBackend(SpawnBackend):
                 final_command.append("--dangerously-bypass-approvals-and-sandbox")
             elif _is_gemini_command(normalized_command):
                 final_command.append("--yolo")
+            elif _is_kimi_command(normalized_command):
+                final_command.append("--yolo")
 
         if _is_nanobot_command(normalized_command):
             if cwd and not _command_has_workspace_arg(normalized_command):
@@ -91,6 +93,11 @@ class TmuxBackend(SpawnBackend):
             final_command.append(prompt)
         elif prompt and _is_gemini_command(normalized_command):
             final_command.extend(["-p", prompt])
+        elif _is_kimi_command(normalized_command):
+            if cwd and not _command_has_workspace_arg(normalized_command):
+                final_command.extend(["-w", cwd])
+            if prompt:
+                final_command.extend(["--print", "-p", prompt])
 
         cmd_str = " ".join(shlex.quote(c) for c in final_command)
         # Append on-exit hook: runs immediately when agent process exits
@@ -191,7 +198,7 @@ class TmuxBackend(SpawnBackend):
                 stderr=subprocess.PIPE,
             )
             os.unlink(tmp_path)
-        elif prompt and not _is_codex_command(normalized_command) and not _is_nanobot_command(normalized_command) and not _is_gemini_command(normalized_command):
+        elif prompt and not _is_codex_command(normalized_command) and not _is_nanobot_command(normalized_command) and not _is_gemini_command(normalized_command) and not _is_kimi_command(normalized_command):
             time.sleep(1)
             subprocess.run(
                 ["tmux", "send-keys", "-t", target, prompt, "Enter"],
@@ -337,6 +344,14 @@ def _is_gemini_command(command: list[str]) -> bool:
     return cmd == "gemini"
 
 
+def _is_kimi_command(command: list[str]) -> bool:
+    """Check if the command is a Kimi CLI invocation."""
+    if not command:
+        return False
+    cmd = command[0].rsplit("/", 1)[-1]
+    return cmd == "kimi"
+
+
 def _command_has_workspace_arg(command: list[str]) -> bool:
     """Return True when a command already specifies a nanobot workspace."""
     return "-w" in command or "--workspace" in command
@@ -355,7 +370,7 @@ def _confirm_workspace_trust_if_prompted(
     injection and accept it with a single Enter so the interactive TUI remains
     intact.
     """
-    if not (_is_claude_command(command) or _is_codex_command(command) or _is_gemini_command(command)):
+    if not (_is_claude_command(command) or _is_codex_command(command) or _is_gemini_command(command) or _is_kimi_command(command)):
         return False
 
     deadline = time.monotonic() + timeout_seconds
@@ -399,6 +414,11 @@ def _looks_like_workspace_trust_prompt(command: list[str], pane_text: str) -> bo
     if _is_gemini_command(command):
         return "trust folder" in pane_text or "trust parent folder" in pane_text
 
+    if _is_kimi_command(command):
+        return ("trust this folder" in pane_text or "trust the contents" in pane_text) and (
+            "enter to confirm" in pane_text or "press enter" in pane_text or "enter to continue" in pane_text
+        )
+
     return False
 
 
@@ -409,6 +429,7 @@ def _is_interactive_cli(command: list[str]) -> bool:
         or _is_codex_command(command)
         or _is_nanobot_command(command)
         or _is_gemini_command(command)
+        or _is_kimi_command(command)
     )
 
 
