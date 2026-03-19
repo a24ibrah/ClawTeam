@@ -95,6 +95,20 @@ class TestLoadBuiltinTemplate:
         assert len(tmpl.agents) == 4
         assert len(tmpl.tasks) == 5
 
+    def test_load_software_dev(self):
+        tmpl = load_template("software-dev")
+        assert tmpl.name == "software-dev"
+        assert tmpl.leader.name == "tech-lead"
+        assert len(tmpl.agents) == 4
+        assert len(tmpl.tasks) == 5
+
+    def test_software_dev_task_owners_match_agents(self):
+        tmpl = load_template("software-dev")
+        agent_names = {tmpl.leader.name} | {agent.name for agent in tmpl.agents}
+        for task in tmpl.tasks:
+            if task.owner:
+                assert task.owner in agent_names
+
     def test_strategy_room_agent_names(self):
         tmpl = load_template("strategy-room")
         names = {agent.name for agent in tmpl.agents}
@@ -172,6 +186,7 @@ class TestListTemplates:
         names = {t["name"] for t in templates}
         assert "hedge-fund" in names
         assert "strategy-room" in names
+        assert "software-dev" in names
 
     def test_list_entry_format(self):
         templates = list_templates()
