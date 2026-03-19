@@ -872,10 +872,12 @@ def task_create(
     subject: str = typer.Argument(..., help="Task subject"),
     description: str = typer.Option("", "--description", "-d", help="Task description"),
     owner: Optional[str] = typer.Option(None, "--owner", "-o", help="Owner agent name"),
+    priority: str = typer.Option("medium", "--priority", "-p", help="Task priority: low, medium, high, urgent"),
     blocks: Optional[str] = typer.Option(None, "--blocks", help="Comma-separated task IDs this blocks"),
     blocked_by: Optional[str] = typer.Option(None, "--blocked-by", help="Comma-separated task IDs this is blocked by"),
 ):
     """Create a new task (TaskCreate)."""
+    from clawteam.team.models import TaskPriority
     from clawteam.team.tasks import TaskStore
 
     store = TaskStore(team)
@@ -886,6 +888,7 @@ def task_create(
         subject=subject,
         description=description,
         owner=owner or "",
+        priority=TaskPriority(priority),
         blocks=blocks_list,
         blocked_by=blocked_by_list,
     )
@@ -895,6 +898,7 @@ def task_create(
         console.print(f"[green]OK[/green] Task created: {d['id']}"),
         console.print(f"  Subject: {d['subject']}"),
         console.print(f"  Status: {d['status']}"),
+        console.print(f"  Priority: {d.get('priority', 'medium')}"),
         console.print(f"  Owner: {d.get('owner', '')}") if d.get('owner') else None,
     ))
 
@@ -919,6 +923,7 @@ def task_get(
         console.print(f"Task: [cyan]{d['id']}[/cyan]")
         console.print(f"  Subject: {d['subject']}")
         console.print(f"  Status: {d['status']}")
+        console.print(f"  Priority: {d.get('priority', 'medium')}")
         if d.get('owner'):
             console.print(f"  Owner: {d['owner']}")
         if d.get('lockedBy'):
@@ -941,17 +946,19 @@ def task_update(
     owner: Optional[str] = typer.Option(None, "--owner", "-o", help="New owner"),
     subject: Optional[str] = typer.Option(None, "--subject", help="New subject"),
     description: Optional[str] = typer.Option(None, "--description", "-d", help="New description"),
+    priority: Optional[str] = typer.Option(None, "--priority", "-p", help="New priority: low, medium, high, urgent"),
     add_blocks: Optional[str] = typer.Option(None, "--add-blocks", help="Comma-separated task IDs this blocks"),
     add_blocked_by: Optional[str] = typer.Option(None, "--add-blocked-by", help="Comma-separated task IDs blocking this"),
     force: bool = typer.Option(False, "--force", "-f", help="Force override task lock"),
 ):
     """Update a task (TaskUpdate)."""
     from clawteam.identity import AgentIdentity
-    from clawteam.team.models import TaskStatus
+    from clawteam.team.models import TaskPriority, TaskStatus
     from clawteam.team.tasks import TaskLockError, TaskStore
 
     store = TaskStore(team)
     ts = TaskStatus(status) if status else None
+    tp = TaskPriority(priority) if priority else None
     blocks_list = [b.strip() for b in add_blocks.split(",") if b.strip()] if add_blocks else None
     blocked_by_list = [b.strip() for b in add_blocked_by.split(",") if b.strip()] if add_blocked_by else None
 
@@ -964,6 +971,7 @@ def task_update(
             owner=owner,
             subject=subject,
             description=description,
+            priority=tp,
             add_blocks=blocks_list,
             add_blocked_by=blocked_by_list,
             caller=caller,
@@ -986,14 +994,17 @@ def task_list(
     team: str = typer.Argument(..., help="Team name"),
     status: Optional[str] = typer.Option(None, "--status", "-s", help="Filter by status"),
     owner: Optional[str] = typer.Option(None, "--owner", "-o", help="Filter by owner"),
+    priority: Optional[str] = typer.Option(None, "--priority", "-p", help="Filter by priority: low, medium, high, urgent"),
+    sort_priority: bool = typer.Option(False, "--sort-priority", help="Sort by priority (urgent first)"),
 ):
     """List tasks for a team (TaskList)."""
-    from clawteam.team.models import TaskStatus
+    from clawteam.team.models import TaskPriority, TaskStatus
     from clawteam.team.tasks import TaskStore
 
     store = TaskStore(team)
     ts = TaskStatus(status) if status else None
-    tasks = store.list_tasks(status=ts, owner=owner)
+    tp = TaskPriority(priority) if priority else None
+    tasks = store.list_tasks(status=ts, owner=owner, priority=tp, sort_by_priority=sort_priority)
 
     data = [_dump(t) for t in tasks]
 
@@ -1005,16 +1016,25 @@ def task_list(
         table.add_column("ID", style="dim")
         table.add_column("Subject", style="cyan")
         table.add_column("Status")
+        table.add_column("Priority")
         table.add_column("Owner")
         table.add_column("Lock", style="yellow")
         table.add_column("Blocked By", style="dim")
         for t in items:
             st = t.get("status", "")
             style = {"pending": "white", "in_progress": "yellow", "completed": "green", "blocked": "red"}.get(st, "")
+            priority_value = t.get("priority", "medium")
+            priority_style = {
+                "urgent": "red bold",
+                "high": "yellow",
+                "medium": "white",
+                "low": "dim",
+            }.get(priority_value, "")
             table.add_row(
                 t["id"],
                 t["subject"],
                 f"[{style}]{st}[/{style}]" if style else st,
+                f"[{priority_style}]{priority_value}[/{priority_style}]" if priority_style else priority_value,
                 t.get("owner") or "",
                 t.get("lockedBy") or "",
                 ", ".join(t.get("blockedBy", [])),

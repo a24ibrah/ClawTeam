@@ -4,7 +4,7 @@ from unittest.mock import patch
 
 import pytest
 
-from clawteam.team.models import TaskItem, TaskStatus
+from clawteam.team.models import TaskItem, TaskPriority, TaskStatus
 from clawteam.team.tasks import TaskLockError, TaskStore
 
 
@@ -23,6 +23,10 @@ class TestTaskCreate:
     def test_create_with_owner(self, store):
         t = store.create("Fix bug", owner="alice")
         assert t.owner == "alice"
+
+    def test_create_with_priority(self, store):
+        t = store.create("urgent item", priority=TaskPriority.urgent)
+        assert t.priority == TaskPriority.urgent
 
     def test_create_with_blocked_by_sets_blocked_status(self, store):
         t1 = store.create("first task")
@@ -70,6 +74,11 @@ class TestTaskUpdate:
         t = store.create("task")
         updated = store.update(t.id, owner="bob")
         assert updated.owner == "bob"
+
+    def test_update_priority(self, store):
+        t = store.create("task")
+        updated = store.update(t.id, priority=TaskPriority.high)
+        assert updated.priority == TaskPriority.high
 
     def test_update_add_blocks(self, store):
         t1 = store.create("blocker")
@@ -130,6 +139,27 @@ class TestTaskList:
 
     def test_list_empty(self, store):
         assert store.list_tasks() == []
+
+    def test_list_filter_by_priority(self, store):
+        store.create("urgent-task", priority=TaskPriority.urgent)
+        store.create("low-task", priority=TaskPriority.low)
+        tasks = store.list_tasks(priority=TaskPriority.urgent)
+        assert len(tasks) == 1
+        assert tasks[0].priority == TaskPriority.urgent
+
+    def test_list_sort_by_priority(self, store):
+        store.create("medium-task")
+        store.create("low-task", priority=TaskPriority.low)
+        store.create("urgent-task", priority=TaskPriority.urgent)
+        store.create("high-task", priority=TaskPriority.high)
+
+        tasks = store.list_tasks(sort_by_priority=True)
+        assert [task.priority for task in tasks] == [
+            TaskPriority.urgent,
+            TaskPriority.high,
+            TaskPriority.medium,
+            TaskPriority.low,
+        ]
 
 
 class TestDependencyResolution:

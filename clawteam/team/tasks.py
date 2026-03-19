@@ -11,7 +11,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from clawteam.team.models import TaskItem, TaskStatus, get_data_dir
+from clawteam.team.models import TaskItem, TaskPriority, TaskStatus, get_data_dir
 
 
 class TaskLockError(Exception):
@@ -62,6 +62,7 @@ class TaskStore:
         subject: str,
         description: str = "",
         owner: str = "",
+        priority: TaskPriority | None = None,
         blocks: list[str] | None = None,
         blocked_by: list[str] | None = None,
         metadata: dict[str, Any] | None = None,
@@ -70,6 +71,7 @@ class TaskStore:
             subject=subject,
             description=description,
             owner=owner,
+            priority=priority or TaskPriority.medium,
             blocks=blocks or [],
             blocked_by=blocked_by or [],
             metadata=metadata or {},
@@ -100,6 +102,7 @@ class TaskStore:
         owner: str | None = None,
         subject: str | None = None,
         description: str | None = None,
+        priority: TaskPriority | None = None,
         add_blocks: list[str] | None = None,
         add_blocked_by: list[str] | None = None,
         metadata: dict[str, Any] | None = None,
@@ -140,6 +143,8 @@ class TaskStore:
                 task.subject = subject
             if description is not None:
                 task.description = description
+            if priority is not None:
+                task.priority = priority
             if add_blocks:
                 for b in add_blocks:
                     if b not in task.blocks:
@@ -197,12 +202,25 @@ class TaskStore:
         return released
 
     def list_tasks(
-        self, status: TaskStatus | None = None, owner: str | None = None
+        self,
+        status: TaskStatus | None = None,
+        owner: str | None = None,
+        priority: TaskPriority | None = None,
+        sort_by_priority: bool = False,
     ) -> list[TaskItem]:
-        return self._list_tasks_unlocked(status=status, owner=owner)
+        return self._list_tasks_unlocked(
+            status=status,
+            owner=owner,
+            priority=priority,
+            sort_by_priority=sort_by_priority,
+        )
 
     def _list_tasks_unlocked(
-        self, status: TaskStatus | None = None, owner: str | None = None
+        self,
+        status: TaskStatus | None = None,
+        owner: str | None = None,
+        priority: TaskPriority | None = None,
+        sort_by_priority: bool = False,
     ) -> list[TaskItem]:
         root = _tasks_root(self.team_name)
         tasks = []
@@ -214,9 +232,19 @@ class TaskStore:
                     continue
                 if owner and task.owner != owner:
                     continue
+                if priority and task.priority != priority:
+                    continue
                 tasks.append(task)
             except Exception:
                 continue
+        if sort_by_priority:
+            priority_order = {
+                TaskPriority.urgent: 0,
+                TaskPriority.high: 1,
+                TaskPriority.medium: 2,
+                TaskPriority.low: 3,
+            }
+            tasks.sort(key=lambda task: (priority_order.get(task.priority, 2), task.created_at, task.id))
         return tasks
 
     def get_stats(self) -> dict[str, Any]:
