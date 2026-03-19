@@ -2126,6 +2126,7 @@ def launch_team(
     """Launch a full agent team from a template with one command."""
     import os as _os
 
+    from clawteam.config import get_effective
     from clawteam.spawn import get_backend
     from clawteam.spawn.prompt import build_agent_prompt
     from clawteam.team.manager import TeamManager
@@ -2187,6 +2188,11 @@ def launch_team(
         console.print(f"[red]{e}[/red]")
         raise typer.Exit(1)
 
+    # Match `spawn` behavior: honor configured permission skipping for
+    # template-launched agents as well.
+    sp_val, _ = get_effective("skip_permissions")
+    skip_permissions = str(sp_val).lower() not in ("false", "0", "no", "")
+
     # 7. Workspace setup (optional)
     ws_mgr = None
     if workspace:
@@ -2243,6 +2249,7 @@ def launch_team(
             team_name=t_name,
             prompt=prompt,
             cwd=cwd,
+            skip_permissions=skip_permissions,
         )
         spawned.append({"name": agent.name, "id": a_id, "type": agent.type, "result": result})
 
