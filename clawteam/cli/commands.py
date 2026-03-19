@@ -2118,7 +2118,7 @@ def launch_team(
     template: str = typer.Argument(..., help="Template name (e.g., hedge-fund)"),
     goal: str = typer.Option("", "--goal", "-g", help="Project goal injected into agent prompts"),
     backend: Optional[str] = typer.Option(None, "--backend", "-b", help="Override backend"),
-    team_name: Optional[str] = typer.Option(None, "--team-name", "-t", help="Override team name"),
+    team_name: Optional[str] = typer.Option(None, "--team-name", "--team", "-t", help="Override team name"),
     workspace: bool = typer.Option(False, "--workspace/--no-workspace", "-w"),
     repo: Optional[str] = typer.Option(None, "--repo", help="Git repo path"),
     command_override: Optional[list[str]] = typer.Option(None, "--command", help="Override agent command"),
