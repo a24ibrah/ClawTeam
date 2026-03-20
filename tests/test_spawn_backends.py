@@ -549,36 +549,6 @@ def test_subprocess_backend_kimi_skip_permissions_workspace_and_prompt(monkeypat
     assert "kimi --yolo -w /tmp/demo --print -p 'fix the bug'" in captured["cmd"]
 
 
-def test_tmux_backend_confirms_kimi_workspace_trust_prompt(monkeypatch):
-    run_calls: list[list[str]] = []
-
-    class Result:
-        def __init__(self, returncode: int = 0, stdout: str = ""):
-            self.returncode = returncode
-            self.stdout = stdout
-            self.stderr = ""
-
-    def fake_run(args, **kwargs):
-        run_calls.append(args)
-        if args[:4] == ["tmux", "capture-pane", "-p", "-t"]:
-            return Result(
-                stdout=(
-                    "Quick safety check\n"
-                    "Yes, I trust this folder\n"
-                    "Enter to confirm\n"
-                )
-            )
-        return Result()
-
-    monkeypatch.setattr("clawteam.spawn.tmux_backend.subprocess.run", fake_run)
-    monkeypatch.setattr("clawteam.spawn.tmux_backend.time.sleep", lambda *_: None)
-
-    confirmed = _confirm_workspace_trust_if_prompted("demo:agent", ["kimi"])
-
-    assert confirmed is True
-    assert ["tmux", "send-keys", "-t", "demo:agent", "Enter"] in run_calls
-
-
 def test_resolve_clawteam_executable_ignores_unrelated_argv0(monkeypatch, tmp_path):
     unrelated = tmp_path / "not-clawteam-review"
     unrelated.write_text("#!/bin/sh\n")

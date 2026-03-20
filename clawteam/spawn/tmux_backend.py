@@ -370,7 +370,8 @@ def _confirm_workspace_trust_if_prompted(
     injection and accept it with a single Enter so the interactive TUI remains
     intact.
     """
-    if not (_is_claude_command(command) or _is_codex_command(command) or _is_gemini_command(command) or _is_kimi_command(command)):
+    # kimi-cli has no workspace trust dialog; --yolo handles all permission bypassing
+    if not (_is_claude_command(command) or _is_codex_command(command) or _is_gemini_command(command)):
         return False
 
     deadline = time.monotonic() + timeout_seconds
@@ -413,11 +414,6 @@ def _looks_like_workspace_trust_prompt(command: list[str], pane_text: str) -> bo
 
     if _is_gemini_command(command):
         return "trust folder" in pane_text or "trust parent folder" in pane_text
-
-    if _is_kimi_command(command):
-        return ("trust this folder" in pane_text or "trust the contents" in pane_text) and (
-            "enter to confirm" in pane_text or "press enter" in pane_text or "enter to continue" in pane_text
-        )
 
     return False
 
