@@ -13,6 +13,7 @@ from clawteam.spawn.command_validation import (
     is_claude_command,
     is_codex_command,
     is_gemini_command,
+    is_kimi_command,
     is_nanobot_command,
     normalize_spawn_command,
     validate_spawn_command,
@@ -76,7 +77,14 @@ class SubprocessBackend(SpawnBackend):
                 final_command.append("--dangerously-bypass-approvals-and-sandbox")
             elif is_gemini_command(normalized_command):
                 final_command.append("--yolo")
-        if is_nanobot_command(normalized_command):
+            elif is_kimi_command(normalized_command):
+                final_command.append("--yolo")
+        if is_kimi_command(normalized_command):
+            if cwd and not command_has_workspace_arg(normalized_command):
+                final_command.extend(["-w", cwd])
+            if prompt:
+                final_command.extend(["--print", "-p", prompt])
+        elif is_nanobot_command(normalized_command):
             if cwd and not command_has_workspace_arg(normalized_command):
                 final_command.extend(["-w", cwd])
             if prompt:

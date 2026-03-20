@@ -16,6 +16,7 @@ from clawteam.spawn.command_validation import (
     is_claude_command,
     is_codex_command,
     is_gemini_command,
+    is_kimi_command,
     is_nanobot_command,
     normalize_spawn_command,
     validate_spawn_command,
@@ -89,8 +90,15 @@ class TmuxBackend(SpawnBackend):
                 final_command.append("--dangerously-bypass-approvals-and-sandbox")
             elif is_gemini_command(normalized_command):
                 final_command.append("--yolo")
+            elif is_kimi_command(normalized_command):
+                final_command.append("--yolo")
 
-        if is_nanobot_command(normalized_command):
+        if is_kimi_command(normalized_command):
+            if cwd and not command_has_workspace_arg(normalized_command):
+                final_command.extend(["-w", cwd])
+            if prompt:
+                final_command.extend(["--print", "-p", prompt])
+        elif is_nanobot_command(normalized_command):
             if cwd and not command_has_workspace_arg(normalized_command):
                 final_command.extend(["-w", cwd])
             if prompt:
@@ -199,7 +207,13 @@ class TmuxBackend(SpawnBackend):
                 stderr=subprocess.PIPE,
             )
             os.unlink(tmp_path)
-        elif prompt and not is_codex_command(normalized_command) and not is_nanobot_command(normalized_command) and not is_gemini_command(normalized_command):
+        elif (
+            prompt
+            and not is_codex_command(normalized_command)
+            and not is_nanobot_command(normalized_command)
+            and not is_gemini_command(normalized_command)
+            and not is_kimi_command(normalized_command)
+        ):
             time.sleep(1)
             subprocess.run(
                 ["tmux", "send-keys", "-t", target, prompt, "Enter"],

@@ -82,6 +82,11 @@ def is_gemini_command(command: list[str]) -> bool:
     return _cmd_basename(command) == "gemini"
 
 
+def is_kimi_command(command: list[str]) -> bool:
+    """Check if the command is a Kimi CLI invocation."""
+    return _cmd_basename(command) == "kimi"
+
+
 def is_interactive_cli(command: list[str]) -> bool:
     """Check if the command is an interactive AI CLI."""
     return (
@@ -89,6 +94,7 @@ def is_interactive_cli(command: list[str]) -> bool:
         or is_codex_command(command)
         or is_nanobot_command(command)
         or is_gemini_command(command)
+        or is_kimi_command(command)
     )
 
 
