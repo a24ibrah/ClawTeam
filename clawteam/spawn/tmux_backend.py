@@ -9,18 +9,17 @@ import subprocess
 import tempfile
 import time
 
-from clawteam.spawn.base import SpawnBackend
-from clawteam.spawn.cli_env import build_spawn_path, resolve_clawteam_executable
-from clawteam.spawn.command_validation import (
-    command_has_workspace_arg,
+from clawteam.spawn.adapters import (
+    NativeCliAdapter,
     is_claude_command,
     is_codex_command,
     is_gemini_command,
     is_kimi_command,
     is_nanobot_command,
-    normalize_spawn_command,
-    validate_spawn_command,
 )
+from clawteam.spawn.base import SpawnBackend
+from clawteam.spawn.cli_env import build_spawn_path, resolve_clawteam_executable
+from clawteam.spawn.command_validation import validate_spawn_command
 
 
 class TmuxBackend(SpawnBackend):
@@ -32,6 +31,7 @@ class TmuxBackend(SpawnBackend):
 
     def __init__(self):
         self._agents: dict[str, str] = {}  # agent_name -> tmux target
+        self._adapter = NativeCliAdapter()
 
     def spawn(
         self,
@@ -50,63 +50,41 @@ class TmuxBackend(SpawnBackend):
 
         session_name = f"clawteam-{team_name}"
         clawteam_bin = resolve_clawteam_executable()
-        env_vars = {
+        env_vars = os.environ.copy()
+        env_vars.update({
             "CLAWTEAM_AGENT_ID": agent_id,
             "CLAWTEAM_AGENT_NAME": agent_name,
             "CLAWTEAM_AGENT_TYPE": agent_type,
             "CLAWTEAM_TEAM_NAME": team_name,
             "CLAWTEAM_AGENT_LEADER": "0",
-        }
-        # Propagate user if set
-        user = os.environ.get("CLAWTEAM_USER", "")
-        if user:
-            env_vars["CLAWTEAM_USER"] = user
-        # Propagate transport if set
-        transport = os.environ.get("CLAWTEAM_TRANSPORT", "")
-        if transport:
-            env_vars["CLAWTEAM_TRANSPORT"] = transport
+        })
         if cwd:
             env_vars["CLAWTEAM_WORKSPACE_DIR"] = cwd
+        # Inject context awareness flags
+        env_vars["CLAWTEAM_CONTEXT_ENABLED"] = "1"
         if env:
             env_vars.update(env)
         env_vars["PATH"] = build_spawn_path(env_vars.get("PATH", os.environ.get("PATH")))
         if os.path.isabs(clawteam_bin):
             env_vars.setdefault("CLAWTEAM_BIN", clawteam_bin)
 
-        normalized_command = normalize_spawn_command(command)
+        prepared = self._adapter.prepare_command(
+            command,
+            prompt=prompt,
+            cwd=cwd,
+            skip_permissions=skip_permissions,
+            interactive=True,
+        )
+        normalized_command = prepared.normalized_command
+        validation_command = normalized_command
+        final_command = list(prepared.final_command)
+        post_launch_prompt = prepared.post_launch_prompt
 
-        command_error = validate_spawn_command(normalized_command, path=env_vars["PATH"], cwd=cwd)
+        command_error = validate_spawn_command(validation_command, path=env_vars["PATH"], cwd=cwd)
         if command_error:
             return command_error
 
         export_str = "; ".join(f"export {k}={shlex.quote(v)}" for k, v in env_vars.items())
-
-        # Build the command (without prompt — we'll send it via send-keys)
-        final_command = list(normalized_command)
-        if skip_permissions:
-            if is_claude_command(normalized_command):
-                final_command.append("--dangerously-skip-permissions")
-            elif is_codex_command(normalized_command):
-                final_command.append("--dangerously-bypass-approvals-and-sandbox")
-            elif is_gemini_command(normalized_command):
-                final_command.append("--yolo")
-            elif is_kimi_command(normalized_command):
-                final_command.append("--yolo")
-
-        if is_kimi_command(normalized_command):
-            if cwd and not command_has_workspace_arg(normalized_command):
-                final_command.extend(["-w", cwd])
-            if prompt:
-                final_command.extend(["--print", "-p", prompt])
-        elif is_nanobot_command(normalized_command):
-            if cwd and not command_has_workspace_arg(normalized_command):
-                final_command.extend(["-w", cwd])
-            if prompt:
-                final_command.extend(["-m", prompt])
-        elif prompt and is_codex_command(normalized_command):
-            final_command.append(prompt)
-        elif prompt and is_gemini_command(normalized_command):
-            final_command.extend(["-p", prompt])
 
         cmd_str = " ".join(shlex.quote(c) for c in final_command)
         # Append on-exit hook: runs immediately when agent process exits
@@ -166,7 +144,7 @@ class TmuxBackend(SpawnBackend):
 
         # Send the prompt as input to the interactive claude session
         # (codex prompt is passed as positional arg above, so skip here)
-        if prompt and is_claude_command(normalized_command):
+        if post_launch_prompt and is_claude_command(normalized_command):
             # Wait for Claude Code to finish startup and show input prompt.
             # Bedrock-backed instances can take 10+ seconds to initialize.
             _wait_for_claude_ready(target, timeout_seconds=30)
@@ -175,7 +153,7 @@ class TmuxBackend(SpawnBackend):
             with tempfile.NamedTemporaryFile(
                 mode="w", suffix=".txt", delete=False, prefix="clawteam-prompt-"
             ) as f:
-                f.write(prompt)
+                f.write(post_launch_prompt)
                 tmp_path = f.name
             subprocess.run(
                 ["tmux", "load-buffer", "-b", f"prompt-{agent_name}", tmp_path],
@@ -243,7 +221,7 @@ class TmuxBackend(SpawnBackend):
             backend="tmux",
             tmux_target=target,
             pid=pane_pid,
-            command=list(normalized_command),
+            command=list(final_command),
         )
 
         return f"Agent '{agent_name}' spawned in tmux ({target})"
@@ -325,7 +303,6 @@ class TmuxBackend(SpawnBackend):
         session = TmuxBackend.session_name(team_name)
         subprocess.run(["tmux", "attach-session", "-t", session])
         return result
-
 
 def _confirm_workspace_trust_if_prompted(
     target: str,

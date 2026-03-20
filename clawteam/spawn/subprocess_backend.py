@@ -6,18 +6,10 @@ import os
 import shlex
 import subprocess
 
+from clawteam.spawn.adapters import NativeCliAdapter
 from clawteam.spawn.base import SpawnBackend
 from clawteam.spawn.cli_env import build_spawn_path, resolve_clawteam_executable
-from clawteam.spawn.command_validation import (
-    command_has_workspace_arg,
-    is_claude_command,
-    is_codex_command,
-    is_gemini_command,
-    is_kimi_command,
-    is_nanobot_command,
-    normalize_spawn_command,
-    validate_spawn_command,
-)
+from clawteam.spawn.command_validation import validate_spawn_command
 
 
 class SubprocessBackend(SpawnBackend):
@@ -25,6 +17,7 @@ class SubprocessBackend(SpawnBackend):
 
     def __init__(self):
         self._processes: dict[str, subprocess.Popen] = {}
+        self._adapter = NativeCliAdapter()
 
     def spawn(
         self,
@@ -63,37 +56,20 @@ class SubprocessBackend(SpawnBackend):
         if os.path.isabs(clawteam_bin):
             spawn_env.setdefault("CLAWTEAM_BIN", clawteam_bin)
 
-        normalized_command = normalize_spawn_command(command)
+        prepared = self._adapter.prepare_command(
+            command,
+            prompt=prompt,
+            cwd=cwd,
+            skip_permissions=skip_permissions,
+            interactive=False,
+        )
+        normalized_command = prepared.normalized_command
+        validation_command = normalized_command
+        final_command = list(prepared.final_command)
 
-        command_error = validate_spawn_command(normalized_command, path=spawn_env["PATH"], cwd=cwd)
+        command_error = validate_spawn_command(validation_command, path=spawn_env["PATH"], cwd=cwd)
         if command_error:
             return command_error
-
-        final_command = list(normalized_command)
-        if skip_permissions:
-            if is_claude_command(normalized_command):
-                final_command.append("--dangerously-skip-permissions")
-            elif is_codex_command(normalized_command):
-                final_command.append("--dangerously-bypass-approvals-and-sandbox")
-            elif is_gemini_command(normalized_command):
-                final_command.append("--yolo")
-            elif is_kimi_command(normalized_command):
-                final_command.append("--yolo")
-        if is_kimi_command(normalized_command):
-            if cwd and not command_has_workspace_arg(normalized_command):
-                final_command.extend(["-w", cwd])
-            if prompt:
-                final_command.extend(["--print", "-p", prompt])
-        elif is_nanobot_command(normalized_command):
-            if cwd and not command_has_workspace_arg(normalized_command):
-                final_command.extend(["-w", cwd])
-            if prompt:
-                final_command.extend(["-m", prompt])
-        elif prompt:
-            if is_codex_command(normalized_command):
-                final_command.append(prompt)
-            else:
-                final_command.extend(["-p", prompt])
 
         # Wrap with on-exit hook so task status updates immediately on exit
         cmd_str = " ".join(shlex.quote(c) for c in final_command)
@@ -121,7 +97,7 @@ class SubprocessBackend(SpawnBackend):
             agent_name=agent_name,
             backend="subprocess",
             pid=process.pid,
-            command=list(normalized_command),
+            command=list(final_command),
         )
 
         return f"Agent '{agent_name}' spawned as subprocess (pid={process.pid})"
