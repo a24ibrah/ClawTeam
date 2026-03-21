@@ -12,6 +12,8 @@ class TestClawTeamConfig:
         assert cfg.default_backend == "tmux"
         assert cfg.skip_permissions is True
         assert cfg.workspace == "auto"
+        assert cfg.profiles == {}
+        assert cfg.presets == {}
 
     def test_custom_values(self):
         cfg = ClawTeamConfig(user="alice", default_backend="subprocess", workspace="never")
