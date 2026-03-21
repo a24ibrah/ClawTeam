@@ -142,12 +142,20 @@ class TmuxBackend(SpawnBackend):
 
         _confirm_workspace_trust_if_prompted(target, normalized_command)
 
-        # Send the prompt as input to the interactive claude session
-        # (codex prompt is passed as positional arg above, so skip here)
+        # Send the prompt as input to interactive sessions when needed
+        if prompt:
+            from clawteam.config import load_config
+
+            cfg = load_config()
+
         if post_launch_prompt and is_claude_command(normalized_command):
             # Wait for Claude Code to finish startup and show input prompt.
             # Bedrock-backed instances can take 10+ seconds to initialize.
-            _wait_for_claude_ready(target, timeout_seconds=30)
+            _wait_for_claude_ready(
+                target,
+                timeout_seconds=cfg.spawn_ready_timeout,
+                fallback_delay=cfg.spawn_prompt_delay,
+            )
             # Write prompt to a temp file and use load-buffer + paste-buffer
             # to avoid escaping issues for multi-line prompts.
             with tempfile.NamedTemporaryFile(
@@ -192,7 +200,13 @@ class TmuxBackend(SpawnBackend):
             and not is_gemini_command(normalized_command)
             and not is_kimi_command(normalized_command)
         ):
-            time.sleep(1)
+            # Other interactive TUIs still need the screen to be live before we
+            # inject text via tmux send-keys.
+            _wait_for_tui_ready(
+                target,
+                timeout=cfg.spawn_ready_timeout,
+                fallback_delay=cfg.spawn_prompt_delay,
+            )
             subprocess.run(
                 ["tmux", "send-keys", "-t", target, prompt, "Enter"],
                 stdout=subprocess.PIPE,
@@ -317,6 +331,25 @@ def _confirm_workspace_trust_if_prompted(
     injection and accept it with a single Enter so the interactive TUI remains
     intact.
     """
+def _wait_for_tui_ready(
+    target: str,
+    timeout: float = 30.0,
+    fallback_delay: float = 2.0,
+    poll_interval: float = 0.5,
+) -> None:
+    """Poll the tmux pane until the TUI appears ready, then return.
+
+    Detects readiness by looking for box-drawing characters or common prompt
+    markers that all interactive AI CLIs render once their UI is live.
+    Falls back to a plain ``time.sleep(fallback_delay)`` if the timeout
+    expires without a match — same behaviour as the old hard-coded sleep.
+
+    Args:
+        target: tmux target string, e.g. ``clawteam-fund1:buffett-analyst``.
+        timeout: Maximum seconds to wait before falling back.
+        fallback_delay: Seconds to sleep when polling times out.
+        poll_interval: Seconds between each pane capture attempt.
+    """
     if not (is_claude_command(command) or is_codex_command(command) or is_gemini_command(command)):
         return False
 
@@ -367,6 +400,7 @@ def _looks_like_workspace_trust_prompt(command: list[str], pane_text: str) -> bo
 def _wait_for_claude_ready(
     target: str,
     timeout_seconds: float = 30.0,
+    fallback_delay: float = 2.0,
     poll_interval: float = 1.0,
 ) -> bool:
     """Poll tmux pane until Claude Code shows an input prompt.
@@ -397,4 +431,35 @@ def _wait_for_claude_ready(
                 if "Try " in line and "write a test" in line:
                     return True
         time.sleep(poll_interval)
+    time.sleep(fallback_delay)
     return False
+
+
+def _wait_for_tui_ready(
+    target: str,
+    timeout: float = 30.0,
+    fallback_delay: float = 2.0,
+    poll_interval: float = 0.5,
+) -> None:
+    """Poll the tmux pane until the TUI appears ready, then return.
+
+    This is used for interactive CLIs that still rely on tmux send-keys prompt
+    injection. When readiness is not detected before ``timeout``, we keep the
+    previous fallback behaviour and sleep for ``fallback_delay`` seconds.
+    """
+
+    ready_hints = ("╭", "╔", "┌", "│", "║", "✓", ">", "❯", "›")
+    time.sleep(0.5)
+
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        result = subprocess.run(
+            ["tmux", "capture-pane", "-t", target, "-p"],
+            capture_output=True,
+            text=True,
+        )
+        if result.returncode == 0 and any(hint in result.stdout for hint in ready_hints):
+            return
+        time.sleep(poll_interval)
+
+    time.sleep(fallback_delay)
