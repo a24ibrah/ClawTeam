@@ -14,6 +14,10 @@ from clawteam.spawn.adapters import (
     is_claude_command,
     is_codex_command,
     is_gemini_command,
+    is_kimi_command,
+    is_nanobot_command,
+    is_opencode_command,
+    is_qwen_command,
 )
 from clawteam.spawn.base import SpawnBackend
 from clawteam.spawn.cli_env import build_spawn_path, resolve_clawteam_executable
@@ -140,9 +144,40 @@ class TmuxBackend(SpawnBackend):
 
         _confirm_workspace_trust_if_prompted(target, normalized_command)
 
+        # Send the prompt as input to interactive sessions when needed
+        if prompt:
+            from clawteam.config import load_config
+
+            cfg = load_config()
+
         if post_launch_prompt:
-            _wait_for_cli_ready(target, timeout_seconds=30)
+            _wait_for_cli_ready(
+                target,
+                timeout_seconds=cfg.spawn_ready_timeout,
+                fallback_delay=cfg.spawn_prompt_delay,
+            )
             _inject_prompt_via_buffer(target, agent_name, post_launch_prompt)
+        elif (
+            prompt
+            and not is_codex_command(normalized_command)
+            and not is_nanobot_command(normalized_command)
+            and not is_gemini_command(normalized_command)
+            and not is_kimi_command(normalized_command)
+            and not is_qwen_command(normalized_command)
+            and not is_opencode_command(normalized_command)
+        ):
+            # Other interactive TUIs still need the screen to be live before we
+            # inject text via tmux send-keys.
+            _wait_for_tui_ready(
+                target,
+                timeout=cfg.spawn_ready_timeout,
+                fallback_delay=cfg.spawn_prompt_delay,
+            )
+            subprocess.run(
+                ["tmux", "send-keys", "-t", target, prompt, "Enter"],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
 
         self._agents[agent_name] = target
 
@@ -312,6 +347,7 @@ def _looks_like_workspace_trust_prompt(command: list[str], pane_text: str) -> bo
 def _wait_for_cli_ready(
     target: str,
     timeout_seconds: float = 30.0,
+    fallback_delay: float = 2.0,
     poll_interval: float = 1.0,
 ) -> bool:
     """Poll tmux pane until an interactive CLI shows an input prompt.
@@ -360,7 +396,38 @@ def _wait_for_cli_ready(
             last_content = text
 
         time.sleep(poll_interval)
+    time.sleep(fallback_delay)
     return False
+
+
+def _wait_for_tui_ready(
+    target: str,
+    timeout: float = 30.0,
+    fallback_delay: float = 2.0,
+    poll_interval: float = 0.5,
+) -> None:
+    """Poll the tmux pane until the TUI appears ready, then return.
+
+    This is used for interactive CLIs that still rely on tmux send-keys prompt
+    injection. When readiness is not detected before ``timeout``, we keep the
+    previous fallback behaviour and sleep for ``fallback_delay`` seconds.
+    """
+
+    ready_hints = ("╭", "╔", "┌", "│", "║", "✓", ">", "❯", "›")
+    time.sleep(0.5)
+
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        result = subprocess.run(
+            ["tmux", "capture-pane", "-t", target, "-p"],
+            capture_output=True,
+            text=True,
+        )
+        if result.returncode == 0 and any(hint in result.stdout for hint in ready_hints):
+            return
+        time.sleep(poll_interval)
+
+    time.sleep(fallback_delay)
 
 
 def _inject_prompt_via_buffer(
@@ -370,10 +437,9 @@ def _inject_prompt_via_buffer(
 ) -> None:
     """Inject a prompt into a tmux pane via ``load-buffer`` / ``paste-buffer``.
 
-    Using a temp file avoids the shell-escaping pitfalls of ``send-keys``
-    for multi-line or special-character prompts.  Two Enter keystrokes are
-    sent after the paste to confirm and submit (required by Claude Code;
-    harmless for other TUIs).
+    Using a temp file avoids the shell-escaping pitfalls of ``send-keys`` for
+    multi-line or special-character prompts. Two Enter keystrokes are sent
+    after the paste to confirm and submit.
     """
     buf_name = f"prompt-{agent_name}"
     with tempfile.NamedTemporaryFile(
@@ -381,28 +447,34 @@ def _inject_prompt_via_buffer(
     ) as f:
         f.write(prompt)
         tmp_path = f.name
+
     try:
         subprocess.run(
             ["tmux", "load-buffer", "-b", buf_name, tmp_path],
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
         )
         subprocess.run(
             ["tmux", "paste-buffer", "-b", buf_name, "-t", target],
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
         )
         time.sleep(0.5)
         subprocess.run(
             ["tmux", "send-keys", "-t", target, "Enter"],
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
         )
         time.sleep(0.3)
         subprocess.run(
             ["tmux", "send-keys", "-t", target, "Enter"],
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
         )
         subprocess.run(
             ["tmux", "delete-buffer", "-b", buf_name],
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
         )
     finally:
         os.unlink(tmp_path)

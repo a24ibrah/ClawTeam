@@ -6,10 +6,12 @@ import collections
 import json
 import os
 import socket
+import uuid
 from pathlib import Path
 
 from clawteam.team.models import get_data_dir
 from clawteam.transport.base import Transport
+from clawteam.transport.claimed import ClaimedMessage
 from clawteam.transport.file import FileTransport
 
 
@@ -132,27 +134,72 @@ class P2PTransport(Transport):
         # Peer unreachable — fall back to file
         self._file_fallback.deliver(recipient, data)
 
+    def claim_messages(self, agent_name: str, limit: int = 10) -> list[ClaimedMessage]:
+        claimed: list[ClaimedMessage] = []
+
+        while self._peek_buffer and len(claimed) < limit:
+            data = self._peek_buffer.popleft()
+            claimed.append(
+                ClaimedMessage(
+                    data=data,
+                    ack=lambda: None,
+                    quarantine=lambda error, payload=data: self._file_fallback._quarantine_bytes(
+                        agent_name,
+                        payload,
+                        error,
+                        source_name=f"p2p-{uuid.uuid4().hex[:8]}.json",
+                    ),
+                )
+            )
+
+        if self._pull:
+            import zmq
+
+            while len(claimed) < limit:
+                try:
+                    data = self._pull.recv(zmq.NOBLOCK)
+                    claimed.append(
+                        ClaimedMessage(
+                            data=data,
+                            ack=lambda: None,
+                            quarantine=lambda error, payload=data: self._file_fallback._quarantine_bytes(
+                                agent_name,
+                                payload,
+                                error,
+                                source_name=f"p2p-{uuid.uuid4().hex[:8]}.json",
+                            ),
+                        )
+                    )
+                except zmq.Again:
+                    break
+
+        remaining = limit - len(claimed)
+        if remaining > 0:
+            claimed.extend(self._file_fallback.claim_messages(agent_name, remaining))
+        return claimed
+
     def fetch(self, agent_name: str, limit: int = 10, consume: bool = True) -> list[bytes]:
-        messages: list[bytes] = []
-        # 1. Drain peek buffer first (only on consume)
         if consume:
-            while self._peek_buffer and len(messages) < limit:
-                messages.append(self._peek_buffer.popleft())
-        # 2. Drain ZMQ PULL socket (non-blocking)
+            messages: list[bytes] = []
+            for claimed in self.claim_messages(agent_name, limit):
+                messages.append(claimed.data)
+                claimed.ack()
+            return messages
+
+        messages: list[bytes] = []
+        # 1. Drain ZMQ PULL socket (non-blocking)
         if self._pull:
             import zmq
 
             while len(messages) < limit:
                 try:
                     data = self._pull.recv(zmq.NOBLOCK)
-                    if consume:
-                        messages.append(data)
-                    else:
-                        self._peek_buffer.append(data)
-                        messages.append(data)
+                    self._peek_buffer.append(data)
+                    messages.append(data)
                 except zmq.Again:
                     break
-        # 3. File fallback for remaining
+
+        # 2. File fallback for remaining
         remaining = limit - len(messages)
         if remaining > 0:
             messages.extend(self._file_fallback.fetch(agent_name, remaining, consume))
