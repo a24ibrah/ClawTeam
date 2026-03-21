@@ -331,25 +331,6 @@ def _confirm_workspace_trust_if_prompted(
     injection and accept it with a single Enter so the interactive TUI remains
     intact.
     """
-def _wait_for_tui_ready(
-    target: str,
-    timeout: float = 30.0,
-    fallback_delay: float = 2.0,
-    poll_interval: float = 0.5,
-) -> None:
-    """Poll the tmux pane until the TUI appears ready, then return.
-
-    Detects readiness by looking for box-drawing characters or common prompt
-    markers that all interactive AI CLIs render once their UI is live.
-    Falls back to a plain ``time.sleep(fallback_delay)`` if the timeout
-    expires without a match — same behaviour as the old hard-coded sleep.
-
-    Args:
-        target: tmux target string, e.g. ``clawteam-fund1:buffett-analyst``.
-        timeout: Maximum seconds to wait before falling back.
-        fallback_delay: Seconds to sleep when polling times out.
-        poll_interval: Seconds between each pane capture attempt.
-    """
     if not (is_claude_command(command) or is_codex_command(command) or is_gemini_command(command)):
         return False
 
