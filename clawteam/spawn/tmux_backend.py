@@ -142,13 +142,14 @@ class TmuxBackend(SpawnBackend):
                 "Verify the CLI works standalone before using it with clawteam spawn."
             )
 
-        _confirm_workspace_trust_if_prompted(target, normalized_command)
+        from clawteam.config import load_config
 
-        # Send the prompt as input to interactive sessions when needed
-        if prompt:
-            from clawteam.config import load_config
-
-            cfg = load_config()
+        cfg = load_config()
+        _confirm_workspace_trust_if_prompted(
+            target,
+            normalized_command,
+            timeout_seconds=cfg.spawn_ready_timeout,
+        )
 
         if post_launch_prompt:
             _wait_for_cli_ready(
