@@ -1,4 +1,14 @@
 #
+## [2026-03-23] Planning Step 4
+
+- Goal: Continue building Path class to match original repo's features.
+- Step 4: Implement is_file(), is_dir(), and mkdir() for Path class.
+- Acceptance Criteria:
+  - Path.is_file() returns True if path is a file.
+  - Path.is_dir() returns True if path is a directory.
+  - Path.mkdir(exist_ok=True) creates the directory (and parents if needed).
+- Next: Assign this task to the Executor agent for implementation.
+#
 ## [2026-03-23] Planning Step 3
 
 - Goal: Continue building Path class to match original repo's features.
