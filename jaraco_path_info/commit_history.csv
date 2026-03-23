@@ -1,0 +1,36 @@
+date,commit_message
+2025-07-27,Ignore the arg type. Workaround for python/typeshed#14483
+2025-07-27,Finalize
+2025-07-27,Supply the types, irrespective of platform.
+2025-07-27,Add news fragment.
+2025-07-27,Merge commit '5357ae1'
+2025-07-27,👹 Feed the hobgoblins (delint).
+2025-07-27,Merge pull request #237 from aniederl/fix/tempdir-ctor-args
+2025-05-14,Merge https://github.com/jaraco/skeleton
+2025-05-12,Bump to setuptools 77 or later.
+2025-05-10,Revert "Python 3 is the default nowadays (jaraco/skeleton#173)" (jaraco/skeleton#175)
+2025-05-10,Add coherent.licensed plugin to inject license texts into the build.
+2025-05-04,Python 3 is the default nowadays (jaraco/skeleton#173)
+2025-05-03,Merge https://github.com/jaraco/skeleton
+2025-05-03,Replace copy of license with an SPDX identifier. (jaraco/skeleton#171)
+2025-03-22,Remove PIP_NO_PYTHON_VERSION_WARNING.
+2025-03-22,Remove workaround and update badge.
+2025-03-21,Remove deprecated license classifier (PEP 639) (jaraco/skeleton#170)
+2025-03-07,Update to the latest ruff version (jaraco/skeleton#166)
+2025-03-07,Remove pycodestyle warnings, no longer meaningful when using ruff formatter.
+2025-03-04,remove extra spaces in ruff.toml (jaraco/skeleton#164)
+2025-02-27,Enable ruff rules ISC001/ISC002 (jaraco/skeleton#158)
+2025-02-26,Merge https://github.com/jaraco/skeleton
+2025-02-26,Consistent import sorting (isort) (jaraco/skeleton#157)
+2025-02-25,Select Ruff rules for modern type annotations (jaraco/skeleton#160)
+2025-02-24,Fix new mandatory configuration field for RTD (jaraco/skeleton#159)
+2025-02-23,Add support for building lxml on pre-release Pythons.
+2025-02-12,Removing dependabot config. Closes jaraco/skeleton#156
+2025-01-16,use tmpdir fixture instead of mkdtemp()
+2025-01-15,re-insert deleted initializer arguments for TempDir
+2025-01-15,add tests for TempDir constructor arguments
+2025-01-03,Bump badge for 2025.
+2024-12-28,Add 'Traversal' to __all__ so it shows up in docs.
+2024-12-28,Finalize
+2024-12-28,Add news fragment.
+2024-12-28,Merge pull request #235 from SethMMorton/main
