@@ -1,3 +1,16 @@
+                    def read_bytes(self):
+                        with open(self, 'rb') as f:
+                            return f.read()
+
+                    def write_bytes(self, data):
+                        with open(self, 'wb') as f:
+                            f.write(data)
+                        return self
+
+                    def glob(self, pattern):
+                        import glob
+                        for match in glob.glob(os.path.join(self, pattern)):
+                            yield Path(match)
                 def stat(self):
                     return os.stat(self)
 
