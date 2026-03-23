@@ -1,3 +1,14 @@
+                            def makedirs(self, exist_ok=True):
+                                os.makedirs(self, exist_ok=exist_ok)
+                                return self
+
+                            def rmdir(self):
+                                os.rmdir(self)
+                                return self
+
+                            def remove(self):
+                                os.remove(self)
+                                return self
                         def with_name(self, name):
                             return self.parent / name
 
