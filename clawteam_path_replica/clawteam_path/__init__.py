@@ -1,3 +1,18 @@
+                                def rmdir_p(self):
+                                    try:
+                                        os.rmdir(self)
+                                    except (FileNotFoundError, OSError):
+                                        pass
+                                    return self
+
+                                def removedirs(self):
+                                    os.removedirs(self)
+                                    return self
+
+                                def copy(self, dst):
+                                    import shutil
+                                    shutil.copy2(self, dst)
+                                    return Path(dst)
                             def makedirs(self, exist_ok=True):
                                 os.makedirs(self, exist_ok=exist_ok)
                                 return self
