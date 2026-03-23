@@ -1,3 +1,13 @@
+#
+## [2026-03-23] Planning Step 2
+
+- Goal: Incrementally build up the Path class to match the original repo's features.
+- Step 2: Implement the / operator (__truediv__) for path joining, and add parent and name properties.
+- Acceptance Criteria:
+  - Path supports / operator for joining paths (e.g., Path('a') / 'b' == Path('a/b')).
+  - Path.parent returns the parent directory as a Path object.
+  - Path.name returns the final component of the path as a string.
+- Next: Assign this task to the Executor agent for implementation.
 # Planner Agent Log
 
 ## [2026-03-23] Planning Step 1
