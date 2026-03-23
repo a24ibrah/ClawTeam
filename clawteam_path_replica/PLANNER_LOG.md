@@ -1,4 +1,14 @@
 #
+## [2026-03-23] Planning Step 9
+
+- Goal: Continue building Path class to match original repo's features.
+- Step 9: Implement makedirs(), rmdir(), and remove() for Path class.
+- Acceptance Criteria:
+  - Path.makedirs() creates a directory and all intermediate-level directories.
+  - Path.rmdir() removes the directory.
+  - Path.remove() removes the file.
+- Next: Assign this task to the Executor agent for implementation.
+#
 ## [2026-03-23] Planning Step 8
 
 - Goal: Continue building Path class to match original repo's features.
