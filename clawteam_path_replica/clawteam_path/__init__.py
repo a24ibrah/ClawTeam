@@ -1,3 +1,14 @@
+                        def with_name(self, name):
+                            return self.parent / name
+
+                        def with_suffix(self, suffix):
+                            base = self.stem + suffix
+                            return self.parent / base
+
+                        def touch(self):
+                            with open(self, 'a'):
+                                os.utime(self, None)
+                            return self
                     def read_bytes(self):
                         with open(self, 'rb') as f:
                             return f.read()
