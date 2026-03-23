@@ -1,4 +1,14 @@
 #
+## [2026-03-23] Planning Step 5
+
+- Goal: Continue building Path class to match original repo's features.
+- Step 5: Implement iterdir(), joinpath(), and absolute() for Path class.
+- Acceptance Criteria:
+  - Path.iterdir() yields Path objects for each entry in the directory.
+  - Path.joinpath(*others) joins paths and returns a Path object.
+  - Path.absolute() returns the absolute path as a Path object.
+- Next: Assign this task to the Executor agent for implementation.
+#
 ## [2026-03-23] Planning Step 4
 
 - Goal: Continue building Path class to match original repo's features.
