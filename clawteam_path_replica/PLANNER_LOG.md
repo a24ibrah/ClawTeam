@@ -1,4 +1,14 @@
 #
+## [2026-03-23] Planning Step 3
+
+- Goal: Continue building Path class to match original repo's features.
+- Step 3: Implement suffix, stem properties, and exists() method.
+- Acceptance Criteria:
+  - Path.suffix returns the file extension (including dot) or empty string.
+  - Path.stem returns the filename without extension.
+  - Path.exists() returns True if the path exists in the filesystem.
+- Next: Assign this task to the Executor agent for implementation.
+#
 ## [2026-03-23] Planning Step 2
 
 - Goal: Incrementally build up the Path class to match the original repo's features.

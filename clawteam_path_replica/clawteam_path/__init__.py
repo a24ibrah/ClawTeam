@@ -1,3 +1,17 @@
+    @property
+    def suffix(self):
+        base = self.name
+        dot = base.rfind('.')
+        return base[dot:] if dot != -1 else ''
+
+    @property
+    def stem(self):
+        base = self.name
+        dot = base.rfind('.')
+        return base[:dot] if dot != -1 else base
+
+    def exists(self):
+        return os.path.exists(self)
 # ClawTeam Path Replica - Step 1
 # Basic Path class skeleton (subclass of str) with minimal constructor and string compatibility.
 
