@@ -1,3 +1,15 @@
+                                        def hardlink_to(self, dst):
+                                            os.link(self, dst)
+                                            return Path(dst)
+
+                                        def readlink(self):
+                                            return Path(os.readlink(self))
+
+                                        def walk(self):
+                                            for dirpath, dirnames, filenames in os.walk(self):
+                                                yield Path(dirpath)
+                                                for name in dirnames + filenames:
+                                                    yield Path(os.path.join(dirpath, name))
                                     def copytree(self, dst):
                                         import shutil
                                         shutil.copytree(self, dst)
