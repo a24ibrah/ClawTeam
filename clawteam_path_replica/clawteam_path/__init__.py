@@ -1,3 +1,12 @@
+        def is_file(self):
+            return os.path.isfile(self)
+
+        def is_dir(self):
+            return os.path.isdir(self)
+
+        def mkdir(self, exist_ok=True):
+            os.makedirs(self, exist_ok=exist_ok)
+            return self
     @property
     def suffix(self):
         base = self.name
