@@ -1,3 +1,14 @@
+                def stat(self):
+                    return os.stat(self)
+
+                def read_text(self, encoding=None):
+                    with open(self, encoding=encoding or 'utf-8') as f:
+                        return f.read()
+
+                def write_text(self, data, encoding=None):
+                    with open(self, 'w', encoding=encoding or 'utf-8') as f:
+                        f.write(data)
+                    return self
             def iterdir(self):
                 if not self.is_dir():
                     raise NotADirectoryError(self)

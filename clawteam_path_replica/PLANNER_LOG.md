@@ -1,4 +1,14 @@
 #
+## [2026-03-23] Planning Step 6
+
+- Goal: Continue building Path class to match original repo's features.
+- Step 6: Implement stat(), read_text(), and write_text() for Path class.
+- Acceptance Criteria:
+  - Path.stat() returns os.stat result for the path.
+  - Path.read_text(encoding=None) reads file contents as text.
+  - Path.write_text(data, encoding=None) writes text to file.
+- Next: Assign this task to the Executor agent for implementation.
+#
 ## [2026-03-23] Planning Step 5
 
 - Goal: Continue building Path class to match original repo's features.
