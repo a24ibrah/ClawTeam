@@ -1,4 +1,14 @@
 #
+## [2026-03-23] Planning Step 7
+
+- Goal: Continue building Path class to match original repo's features.
+- Step 7: Implement read_bytes(), write_bytes(), and glob() for Path class.
+- Acceptance Criteria:
+  - Path.read_bytes() reads file contents as bytes.
+  - Path.write_bytes(data) writes bytes to file.
+  - Path.glob(pattern) yields Path objects matching the pattern in the directory.
+- Next: Assign this task to the Executor agent for implementation.
+#
 ## [2026-03-23] Planning Step 6
 
 - Goal: Continue building Path class to match original repo's features.
