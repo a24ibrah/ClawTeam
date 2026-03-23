@@ -1,3 +1,14 @@
+            def iterdir(self):
+                if not self.is_dir():
+                    raise NotADirectoryError(self)
+                for entry in os.listdir(self):
+                    yield Path(os.path.join(self, entry))
+
+            def joinpath(self, *others):
+                return Path(os.path.join(self, *others))
+
+            def absolute(self):
+                return Path(os.path.abspath(self))
         def is_file(self):
             return os.path.isfile(self)
 
