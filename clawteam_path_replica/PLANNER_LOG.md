@@ -1,4 +1,14 @@
 #
+## [2026-03-23] Planning Step 10
+
+- Goal: Continue building Path class to match original repo's features.
+- Step 10: Implement rmdir_p(), removedirs(), and copy() for Path class.
+- Acceptance Criteria:
+  - Path.rmdir_p() removes the directory, ignoring errors if not empty or does not exist.
+  - Path.removedirs() removes directories recursively.
+  - Path.copy(dst) copies the file to the destination.
+- Next: Assign this task to the Executor agent for implementation.
+#
 ## [2026-03-23] Planning Step 9
 
 - Goal: Continue building Path class to match original repo's features.
