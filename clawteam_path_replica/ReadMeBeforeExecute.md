@@ -1,3 +1,6 @@
+### [2026-03-23] Executor: Step 12 implemented
+- Implemented hardlink_to(), readlink(), and walk() for Path class.
+- Ready for Verifier agent to review and compare to original repo's corresponding features/commits.
 ### [2026-03-23] Verifier: Step 11 reviewed
 - Verified Executor's implementation of copytree, move, and symlink for Path class.
 - Verdict: Pass. Implementation matches Planner's acceptance criteria and original repo's design.
