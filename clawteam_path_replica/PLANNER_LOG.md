@@ -1,4 +1,14 @@
 #
+## [2026-03-23] Planning Step 8
+
+- Goal: Continue building Path class to match original repo's features.
+- Step 8: Implement with_name(), with_suffix(), and touch() for Path class.
+- Acceptance Criteria:
+  - Path.with_name(name) returns a new Path with the final component replaced.
+  - Path.with_suffix(suffix) returns a new Path with the file extension replaced.
+  - Path.touch() creates the file if it does not exist.
+- Next: Assign this task to the Executor agent for implementation.
+#
 ## [2026-03-23] Planning Step 7
 
 - Goal: Continue building Path class to match original repo's features.
