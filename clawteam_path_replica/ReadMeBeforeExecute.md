@@ -1,3 +1,6 @@
+### [2026-03-23] Executor: Step 11 implemented
+- Implemented copytree(), move(), and symlink() for Path class.
+- Ready for Verifier agent to review and compare to original repo's corresponding features/commits.
 ### [2026-03-23] Verifier: Step 10 reviewed
 - Verified Executor's implementation of rmdir_p, removedirs, and copy for Path class.
 - Verdict: Pass. Implementation matches Planner's acceptance criteria and original repo's design.

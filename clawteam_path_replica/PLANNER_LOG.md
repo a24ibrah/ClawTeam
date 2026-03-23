@@ -1,4 +1,14 @@
 #
+## [2026-03-23] Planning Step 11
+
+- Goal: Continue building Path class to match original repo's features.
+- Step 11: Implement copytree(), move(), and symlink() for Path class.
+- Acceptance Criteria:
+  - Path.copytree(dst) recursively copies a directory tree to the destination.
+  - Path.move(dst) moves the file or directory to the destination.
+  - Path.symlink(dst) creates a symbolic link at dst pointing to self.
+- Next: Assign this task to the Executor agent for implementation.
+#
 ## [2026-03-23] Planning Step 10
 
 - Goal: Continue building Path class to match original repo's features.

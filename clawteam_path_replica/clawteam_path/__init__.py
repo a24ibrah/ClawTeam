@@ -1,3 +1,16 @@
+                                    def copytree(self, dst):
+                                        import shutil
+                                        shutil.copytree(self, dst)
+                                        return Path(dst)
+
+                                    def move(self, dst):
+                                        import shutil
+                                        shutil.move(self, dst)
+                                        return Path(dst)
+
+                                    def symlink(self, dst):
+                                        os.symlink(self, dst)
+                                        return Path(dst)
                                 def rmdir_p(self):
                                     try:
                                         os.rmdir(self)
