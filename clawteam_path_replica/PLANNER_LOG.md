@@ -1,4 +1,14 @@
 #
+## [2026-03-23] Planning Step 12
+
+- Goal: Continue building Path class to match original repo's features.
+- Step 12: Implement hardlink_to(), readlink(), and walk() for Path class.
+- Acceptance Criteria:
+  - Path.hardlink_to(dst) creates a hard link at dst pointing to self.
+  - Path.readlink() returns the path to which the symbolic link points.
+  - Path.walk() yields Path objects for all files and directories recursively.
+- Next: Assign this task to the Executor agent for implementation.
+#
 ## [2026-03-23] Planning Step 11
 
 - Goal: Continue building Path class to match original repo's features.
