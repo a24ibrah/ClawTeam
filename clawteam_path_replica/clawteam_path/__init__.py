@@ -1,3 +1,81 @@
+                                        # Step 15: TempDir context manager, SpecialResolver, platform-specific helpers
+                                        import tempfile
+                                        import sys
+
+                                        class TempDir:
+                                            """Context manager for temporary directories."""
+                                            def __enter__(self):
+                                                self.dir = tempfile.TemporaryDirectory()
+                                                return self.dir.name
+                                            def __exit__(self, exc_type, exc_val, exc_tb):
+                                                self.dir.cleanup()
+
+                                        class SpecialResolver:
+                                            """Platform-specific config/data directory resolver."""
+                                            @staticmethod
+                                            def config_dir():
+                                                if sys.platform == 'win32':
+                                                    return os.environ.get('APPDATA', os.path.expanduser('~'))
+                                                elif sys.platform == 'darwin':
+                                                    return os.path.expanduser('~/Library/Application Support')
+                                                else:
+                                                    return os.environ.get('XDG_CONFIG_HOME', os.path.expanduser('~/.config'))
+
+                                            @staticmethod
+                                            def data_dir():
+                                                if sys.platform == 'win32':
+                                                    return os.environ.get('LOCALAPPDATA', os.path.expanduser('~'))
+                                                elif sys.platform == 'darwin':
+                                                    return os.path.expanduser('~/Library/Application Support')
+                                                else:
+                                                    return os.environ.get('XDG_DATA_HOME', os.path.expanduser('~/.local/share'))
+
+                                        def symlink_supported():
+                                            """Return True if symlinks are supported on this platform."""
+                                            if hasattr(os, 'symlink'):
+                                                if sys.platform == 'win32':
+                                                    import ctypes
+                                                    return ctypes.windll.shell32.IsUserAnAdmin() != 0
+                                                return True
+                                            return False
+
+                                        def path_separator():
+                                            """Return the path separator for the current platform."""
+                                            return os.sep
+                                        # Step 14: glob/iglob enhancements, read_md5, read_hash, read_hexhash
+                                            def glob(self, pattern):
+                                                """Yield Path objects matching the pattern in the directory (supports recursive patterns)."""
+                                                import glob as globmod
+                                                for p in globmod.glob(os.path.join(self, pattern), recursive=True):
+                                                    yield self.__class__(p)
+
+                                            def iglob(self, pattern):
+                                                """Yield Path objects matching the pattern in the directory (iterator, supports recursive patterns)."""
+                                                import glob as globmod
+                                                for p in globmod.iglob(os.path.join(self, pattern), recursive=True):
+                                                    yield self.__class__(p)
+
+                                            def read_md5(self):
+                                                """Return the MD5 hash of the file contents."""
+                                                import hashlib
+                                                with open(self, 'rb') as f:
+                                                    return hashlib.md5(f.read()).hexdigest()
+
+                                            def read_hash(self, algo):
+                                                """Return the hash (e.g., sha256) of the file contents using the specified algorithm."""
+                                                import hashlib
+                                                h = hashlib.new(algo)
+                                                with open(self, 'rb') as f:
+                                                    h.update(f.read())
+                                                return h.digest()
+
+                                            def read_hexhash(self, algo):
+                                                """Return the hexadecimal hash string of the file contents using the specified algorithm."""
+                                                import hashlib
+                                                h = hashlib.new(algo)
+                                                with open(self, 'rb') as f:
+                                                    h.update(f.read())
+                                                return h.hexdigest()
                                         # Step 13: walkdirs, walkfiles, files, dirs
                                             def walkdirs(self):
                                                 """Yield Path objects for all directories recursively."""

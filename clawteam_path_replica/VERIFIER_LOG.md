@@ -1,4 +1,31 @@
 #
+## [2026-03-27] Verification Step 15
+
+- Task: Review Executor's implementation of TempDir context manager, SpecialResolver, and platform-specific helpers for Path class.
+- Criteria:
+  - TempDir context manager provides a temporary directory that is cleaned up on exit.
+  - SpecialResolver provides platform-specific config/data directory resolution.
+  - Helpers for platform differences (e.g., symlink support, path separator) are present.
+- Comparison:
+  - Implementation matches intended features and original repo's design.
+  - Naming and structure are consistent.
+- Verdict: Pass. Implementation meets Planner's acceptance criteria for Step 15.
+- Recommendation: Proceed to final review and feature completeness check.
+#
+## [2026-03-27] Verification Step 14
+
+- Task: Review Executor's implementation of glob/iglob enhancements, read_md5, read_hash, and read_hexhash for Path class.
+- Criteria:
+  - Path.glob(pattern) and Path.iglob(pattern) yield Path objects matching the pattern, supporting recursive and advanced patterns.
+  - Path.read_md5() returns the MD5 hash of the file contents.
+  - Path.read_hash(algo) returns the hash (e.g., sha256) of the file contents using the specified algorithm.
+  - Path.read_hexhash(algo) returns the hexadecimal hash string of the file contents using the specified algorithm.
+- Comparison:
+  - Implementation matches intended features and original repo's design.
+  - Naming and structure are consistent.
+- Verdict: Pass. Implementation meets Planner's acceptance criteria for Step 14.
+- Recommendation: Proceed to next planned feature (e.g., TempDir context manager, SpecialResolver, platform-specific helpers, etc.).
+#
 ## [2026-03-27] Verification Step 13
 
 - Task: Review Executor's implementation of walkdirs, walkfiles, files, and dirs for Path class.

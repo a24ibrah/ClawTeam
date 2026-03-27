@@ -1,4 +1,25 @@
 #
+## [2026-03-27] Planning Step 15
+
+- Goal: Continue building Path class to match original repo's features.
+- Step 15: Implement TempDir context manager, SpecialResolver, and platform-specific helpers for Path class.
+- Acceptance Criteria:
+  - TempDir context manager provides a temporary directory that is cleaned up on exit.
+  - SpecialResolver provides platform-specific config/data directory resolution.
+  - Add helpers for platform differences (e.g., symlink support, path separator, etc.).
+- Next: Assign this task to the Executor agent for implementation.
+#
+## [2026-03-27] Planning Step 14
+
+- Goal: Continue building Path class to match original repo's features.
+- Step 14: Implement glob/iglob enhancements, read_md5(), read_hash(), and read_hexhash() for Path class.
+- Acceptance Criteria:
+  - Path.glob(pattern) and Path.iglob(pattern) yield Path objects matching the pattern, supporting recursive and advanced patterns.
+  - Path.read_md5() returns the MD5 hash of the file contents.
+  - Path.read_hash(algo) returns the hash (e.g., sha256) of the file contents using the specified algorithm.
+  - Path.read_hexhash(algo) returns the hexadecimal hash string of the file contents using the specified algorithm.
+- Next: Assign this task to the Executor agent for implementation.
+#
 ## [2026-03-27] Planning Step 13
 
 - Goal: Continue building Path class to match original repo's features.
