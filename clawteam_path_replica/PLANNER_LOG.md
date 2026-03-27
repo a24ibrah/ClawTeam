@@ -1,4 +1,15 @@
 #
+## [2026-03-27] Planning Step 13
+
+- Goal: Continue building Path class to match original repo's features.
+- Step 13: Implement walkdirs(), walkfiles(), files(), and dirs() for Path class.
+- Acceptance Criteria:
+  - Path.walkdirs() yields Path objects for all directories recursively.
+  - Path.walkfiles(pattern=None) yields Path objects for all files recursively, optionally matching a pattern.
+  - Path.files(pattern=None) yields Path objects for files in the current directory, optionally matching a pattern.
+  - Path.dirs(pattern=None) yields Path objects for directories in the current directory, optionally matching a pattern.
+- Next: Assign this task to the Executor agent for implementation.
+#
 ## [2026-03-23] Planning Step 12
 
 - Goal: Continue building Path class to match original repo's features.

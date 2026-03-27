@@ -1,3 +1,35 @@
+                                        # Step 13: walkdirs, walkfiles, files, dirs
+                                            def walkdirs(self):
+                                                """Yield Path objects for all directories recursively."""
+                                                for dirpath, dirnames, _ in os.walk(self):
+                                                    for dirname in dirnames:
+                                                        yield self.__class__(os.path.join(dirpath, dirname))
+
+                                            def walkfiles(self, pattern=None):
+                                                """Yield Path objects for all files recursively, optionally matching a pattern."""
+                                                for dirpath, _, filenames in os.walk(self):
+                                                    for filename in filenames:
+                                                        p = self.__class__(os.path.join(dirpath, filename))
+                                                        if pattern is None or fnmatch.fnmatch(filename, pattern):
+                                                            yield p
+
+                                            def files(self, pattern=None):
+                                                """Yield Path objects for files in the current directory, optionally matching a pattern."""
+                                                if not self.is_dir():
+                                                    return
+                                                for entry in os.listdir(self):
+                                                    p = self.__class__(os.path.join(self, entry))
+                                                    if p.is_file() and (pattern is None or fnmatch.fnmatch(entry, pattern)):
+                                                        yield p
+
+                                            def dirs(self, pattern=None):
+                                                """Yield Path objects for directories in the current directory, optionally matching a pattern."""
+                                                if not self.is_dir():
+                                                    return
+                                                for entry in os.listdir(self):
+                                                    p = self.__class__(os.path.join(self, entry))
+                                                    if p.is_dir() and (pattern is None or fnmatch.fnmatch(entry, pattern)):
+                                                        yield p
                                         def hardlink_to(self, dst):
                                             os.link(self, dst)
                                             return Path(dst)
