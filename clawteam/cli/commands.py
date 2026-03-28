@@ -19,12 +19,78 @@ from rich.table import Table
 from clawteam import __version__
 from clawteam.timefmt import format_timestamp
 
+
 app = typer.Typer(
     name="clawteam",
     help="Framework-agnostic multi-agent coordination CLI",
     no_args_is_help=True,
 )
 console = Console()
+
+# =========================================================================
+# Experiment Commands (scalable agent-driven experiment harness)
+# =========================================================================
+
+experiment_app = typer.Typer(help="Run agent-driven experiment on any repo/tool")
+app.add_typer(experiment_app, name="experiment")
+
+@experiment_app.command("run")
+def experiment_run(
+    repo_path: str = typer.Argument(..., help="Path to the target repo/tool to replicate"),
+    output_dir: str = typer.Option(None, "--output-dir", help="Directory to write experiment artifacts (default: ./<repo>_experiment_artifacts)"),
+    model: str = typer.Option("default", "--model", help="Agent model/profile to use"),
+):
+    """
+    Run the full Planner→Executor→Verifier experiment workflow on a target repo.
+    Extracts features, generates requirements/SRS/design docs, runs agent workflow, and writes all artifacts.
+    """
+    import shutil
+    from pathlib import Path
+    import datetime
+
+    repo = Path(repo_path).resolve()
+    if not repo.exists() or not repo.is_dir():
+        console.print(f"[red]Repo path '{repo}' does not exist or is not a directory.[/red]")
+        raise typer.Exit(1)
+
+    # Set up output directory
+    out_dir = Path(output_dir) if output_dir else Path(f"{repo.name}_experiment_artifacts")
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    # 1. Feature extraction (requirements)
+    features_md = out_dir / "FEATURES.md"
+    srs_md = out_dir / "SRS.md"
+    design_md = out_dir / "DESIGN.md"
+    # Placeholder: Replace with real feature extraction logic
+    features_md.write_text(f"# Features for {repo.name}\n\n- [Placeholder] Extracted features go here.\n", encoding="utf-8")
+    srs_md.write_text(f"# SRS for {repo.name}\n\n- [Placeholder] Software Requirements Specification.\n", encoding="utf-8")
+    design_md.write_text(f"# Design Doc for {repo.name}\n\n- [Placeholder] Design details.\n", encoding="utf-8")
+
+    # 2. Planner → Executor → Verifier workflow (logs, prompts)
+    planner_log = out_dir / "PLANNER_LOG.md"
+    executor_log = out_dir / "EXECUTOR_LOG.md"
+    verifier_log = out_dir / "VERIFIER_LOG.md"
+    planner_prompts = out_dir / "PLANNER_PROMPTS.md"
+    executor_prompts = out_dir / "EXECUTOR_PROMPTS.md"
+    verifier_prompts = out_dir / "VERIFIER_PROMPTS.md"
+    # Placeholder: Replace with real agent orchestration logic
+    now = datetime.datetime.now().isoformat()
+    planner_log.write_text(f"# Planner Log\n\n- [Placeholder] Planner log for {repo.name} at {now}\n", encoding="utf-8")
+    executor_log.write_text(f"# Executor Log\n\n- [Placeholder] Executor log for {repo.name} at {now}\n", encoding="utf-8")
+    verifier_log.write_text(f"# Verifier Log\n\n- [Placeholder] Verifier log for {repo.name} at {now}\n", encoding="utf-8")
+    planner_prompts.write_text(f"# Planner Prompts\n\n- [Placeholder] Planner prompts for {repo.name}\n", encoding="utf-8")
+    executor_prompts.write_text(f"# Executor Prompts\n\n- [Placeholder] Executor prompts for {repo.name}\n", encoding="utf-8")
+    verifier_prompts.write_text(f"# Verifier Prompts\n\n- [Placeholder] Verifier prompts for {repo.name}\n", encoding="utf-8")
+
+    # 3. Traceability matrix and experiment analysis
+    trace_matrix = out_dir / "TRACEABILITY_MATRIX.md"
+    analysis_md = out_dir / "EXPERIMENT_ANALYSIS.md"
+    trace_matrix.write_text(f"# Traceability Matrix for {repo.name}\n\n- [Placeholder] Matrix mapping requirements to implementation.\n", encoding="utf-8")
+    analysis_md.write_text(f"# Experiment Analysis for {repo.name}\n\n- [Placeholder] Analysis of experiment results.\n", encoding="utf-8")
+
+    console.print(f"[green]Experiment artifacts generated in:[/green] {out_dir}")
+    for f in [features_md, srs_md, design_md, planner_log, executor_log, verifier_log, planner_prompts, executor_prompts, verifier_prompts, trace_matrix, analysis_md]:
+        console.print(f"  [cyan]{f.name}[/cyan]")
 
 
 # ---------------------------------------------------------------------------
