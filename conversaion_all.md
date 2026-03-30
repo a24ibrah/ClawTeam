@@ -112,8 +112,7 @@ User: create .env aand fill it with the following:
 Openrouter API: [REDACTED_OPENROUTER_KEY]
 Groq API: [REDACTED_GROQ_KEY]
 Google AI studio API: [REDACTED_GOOGLE_AI_KEY]
-Deepseek API:
-[REDACTED_DEEPSEEK_KEY]
+Deepseek API: [REDACTED_DEEPSEEK_KEY]
 
 create a code to test each one of them
 
